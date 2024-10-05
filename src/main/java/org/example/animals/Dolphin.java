@@ -5,8 +5,11 @@ import org.example.animals.meal.Fish;
 import org.example.animals.mealTypes.Predators;
 
 public class Dolphin extends Predators implements Waterfowl {
+    private final static String TITLE = "Дельфин";
+    private final static String MOVE_TYPE = " плавает";
+
     public Dolphin(){
-        animalTitle = "Дельфин";
+        animalTitle = TITLE;
     }
 
     public void eat(Fish meal) {
@@ -15,6 +18,6 @@ public class Dolphin extends Predators implements Waterfowl {
 
     @Override
     public void swim() {
-        System.out.println(animalTitle + " плавает");
+        System.out.println(animalTitle + MOVE_TYPE);
     }
 }
