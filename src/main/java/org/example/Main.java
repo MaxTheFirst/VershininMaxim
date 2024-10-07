@@ -1,5 +1,7 @@
 package org.example;
 
+import org.example.CustomArrayList.CustomArrayList;
+
 public class Main {
   public static void main(String[] args) {
     CustomArrayList<Integer> array = new CustomArrayList<>();
