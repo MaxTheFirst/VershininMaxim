@@ -6,13 +6,16 @@ import org.example.animals.mealTypes.Predators;
 import org.example.animals.livingEnvironmen.Terrestrial;
 
 public class Tiger extends Predators implements Terrestrial{
+    private final static String TITLE = "Тигр";
+    private final static String MOVE_TYPE = " ходит";
+
     public Tiger(){
-        animalTitle = "Тигр";
+        animalTitle = TITLE;
     }
 
     @Override
     public void walk() {
-        System.out.println(animalTitle + " ходит");
+        System.out.println(animalTitle + MOVE_TYPE);
     }
 
     public void eat(Beef meal) {
