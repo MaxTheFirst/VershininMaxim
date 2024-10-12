@@ -2,6 +2,7 @@ package sort.sorters;
 
 import org.junit.jupiter.api.Test;
 import sort.ElementCountLimitedException;
+import sort.SortType;
 
 import java.util.List;
 
@@ -26,5 +27,11 @@ class BubbleSorterTest {
         ElementCountLimitedException.class,
         () -> sorter.sort(inList)
     );
+  }
+
+  @Test
+  void type() {
+    BubbleSorter sorter = new BubbleSorter(3);
+    assertEquals(sorter.type(), SortType.BUBBLE);
   }
 }
