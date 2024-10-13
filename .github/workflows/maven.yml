@@ -21,6 +21,3 @@ jobs:
           cache: maven
       - name: Verify with Maven
         run: mvn verify
-
-      - name: Run tests with Maven
-        run: mvn test
