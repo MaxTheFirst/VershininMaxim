@@ -15,7 +15,7 @@ public class SortManager {
         try {
          return sorter.sort(array);
         } catch (ElementCountLimitedException e) {
-          System.out.println("Couldn`t execute sort. Trying next one...");
+          System.out.println("Couldn`t execute sort. Trying next one.");
         }
       }
     }
