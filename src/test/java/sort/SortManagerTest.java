@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class SortManagerTest {
 
   @Test
-  void bubleSort() throws ElementCountLimitedException {
+  void bubleSort() {
     List<Integer> inList = List.of(2, 3, 5, 10, 8, 7);
     List<Integer> outList = List.of(2, 3, 5, 7, 8, 10);
     SortManager manager = new SortManager(
@@ -25,7 +25,7 @@ class SortManagerTest {
   }
 
   @Test
-  void mergeSort() throws ElementCountLimitedException {
+  void mergeSort() {
     List<Integer> inList = List.of(2, 3, 5, 10, 8, 7);
     List<Integer> outList = List.of(2, 3, 5, 7, 8, 10);
     SortManager manager = new SortManager(
@@ -54,7 +54,7 @@ class SortManagerTest {
   }
 
   @Test
-  void sortMergeExeption() {
+  void sortMergeException() {
     List<Integer> inList = List.of(2, 3, 5, 10, 8, 7);
     SortManager manager = new SortManager(
         List.of(

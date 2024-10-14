@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class BubbleSorterTest {
 
   @Test
-  void sort() throws ElementCountLimitedException {
+  void sort(){
     List<Integer> inList = List.of(3, 1, 2, 5);
     List<Integer> outList = List.of(1, 2, 3, 5);
     BubbleSorter sorter = new BubbleSorter();

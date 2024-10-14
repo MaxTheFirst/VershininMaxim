@@ -9,7 +9,7 @@ public class SortManager {
     this.sorters = sorters;
   }
 
-  public List<Integer> sort(List<Integer> array, SortType type) throws ElementCountLimitedException {
+  public List<Integer> sort(List<Integer> array, SortType type){
     for (BaseSorter sorter : sorters) {
       if (sorter.type().equals(type)) {
         try {

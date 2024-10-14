@@ -1,6 +1,6 @@
 package sort;
 
-public class ElementCountLimitedException extends Exception {
+public class ElementCountLimitedException extends RuntimeException {
   public ElementCountLimitedException(String message) {
     super(message);
   }

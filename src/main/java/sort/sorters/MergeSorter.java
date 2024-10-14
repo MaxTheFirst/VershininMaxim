@@ -26,7 +26,7 @@ public class MergeSorter implements BaseSorter {
   }
 
   @Override
-  public List<Integer> sort(List<Integer> array) throws ElementCountLimitedException {
+  public List<Integer> sort(List<Integer> array) {
     if (array.size() > maxCount){
       throw new ElementCountLimitedException();
     }
