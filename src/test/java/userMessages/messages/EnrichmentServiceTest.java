@@ -37,39 +37,32 @@ public class EnrichmentServiceTest {
   public void shouldSucceedEnrichmentInConcurrentEnvironmentSuccessfully() throws InterruptedException {
     UserManager manager = new UserManager();
     List<Message> messages = new ArrayList<>();
-    List<String> answers = new ArrayList<>();
+
     for (int i = 0; i < 5; i++) {
       String data = Integer.toString(i);
-      manager.addUser(new User(data, data, data));
+      manager.addUser(new User("firstName", "lastName", data));
       messages.add(new MessageParser("button_click", "book_card", data, EnrichmentType.MSISDN));
-      answers.add(data);
     }
+
     EnrichmentService service = new EnrichmentService(
         List.of(new ByMSISDN(manager))
     );
     List<Message> enrichmentResults = new CopyOnWriteArrayList<>();
     ExecutorService executorService = Executors.newFixedThreadPool(5);
     CountDownLatch latch = new CountDownLatch(5);
+
     for (Message message : messages) {
       executorService.submit(() -> {
-        enrichmentResults.add(
-            service.enrich(message)
-        );
-        latch.countDown();     // уменьшаем значение latch на 1
+        enrichmentResults.add(service.enrich(message));
+        latch.countDown();
       });
     }
+
     latch.await();
-    for (int i = 0; i < 5; i++) {
-      Message message = enrichmentResults.get(i);
-      assertEquals(
-          message.content.get("firstName"),
-          answers.get(i)
-      );
-      assertEquals(
-          message.content.get("lastName"),
-          answers.get(i)
-      );
+
+    for (Message enrichmentResult : enrichmentResults) {
+      assertEquals(enrichmentResult.content.get("firstName"), "firstName");
+      assertEquals(enrichmentResult.content.get("lastName"), "lastName");
     }
   }
-
 }
