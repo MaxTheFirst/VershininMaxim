@@ -1,6 +1,9 @@
 package userMessages.messages;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 import userMessages.messages.enrichings.ByMSISDN;
 import userMessages.users.User;
 import userMessages.users.UserManager;
@@ -12,7 +15,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static junit.framework.TestCase.assertEquals;
 
 public class EnrichmentServiceTest {
 
