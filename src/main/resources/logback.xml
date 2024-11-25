@@ -1,23 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <!-- Консольный аппендер -->
-    <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss} - %msg%n</pattern>
-        </encoder>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>
+                %d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n
+            </Pattern>
+        </layout>
     </appender>
 
-    <!-- Логгер для Spark -->
-    <logger name="org.apache.spark" level="INFO">
-        <appender-ref ref="Console" />
-    </logger>
-
-    <!-- Логгер для SLF4J -->
-    <logger name="org.slf4j" level="WARN" />
-
-    <!-- Корневой логгер -->
-    <root level="INFO">
-        <appender-ref ref="Console" />
+    <root level="info">
+        <appender-ref ref="CONSOLE"/>
     </root>
+
+    <logger name="org.example.controller.controllers" level="DEBUG"/>
 
 </configuration>
