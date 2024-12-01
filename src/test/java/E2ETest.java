@@ -1,0 +1,192 @@
+import com.fasterxml.jackson.databind.ObjectMapper;
+import controllers.article.ArticleController;
+import controllers.article.responses.*;
+import controllers.comment.CommentController;
+import controllers.comment.responses.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import repositories.article.ArticleRepository;
+import repositories.article.InMemoryArticleRepository;
+import repositories.comment.CommentRepository;
+import repositories.comment.InMemoryCommentRepository;
+import services.ArticleService;
+import services.CommentService;
+import spark.Service;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.List;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class E2ETest {
+  private static final int CREATED_STATUS_CODE = 201;
+  private static final long ARTICLE_ID = 1;
+  private static final long COMMENT_ID = 1;
+
+  private Service service;
+  private ObjectMapper objectMapper;
+  private int port;
+
+  @BeforeEach
+  void beforeEach() {
+    service = Service.ignite();
+    initApp();
+    port = service.port();
+  }
+
+  private void initApp() {
+    service = Service.ignite();
+    objectMapper = new ObjectMapper();
+    ArticleRepository articles = new InMemoryArticleRepository();
+    CommentRepository comments = new InMemoryCommentRepository();
+
+    Application application = new Application(
+        List.of(
+            new ArticleController(service, new ArticleService(articles, comments), objectMapper),
+            new CommentController(service, new CommentService(articles, comments), objectMapper)
+        )
+    );
+
+    application.start();
+    service.awaitInitialization();
+  }
+
+  @AfterEach
+  void afterEach() {
+    service.stop();
+    service.awaitStop();
+  }
+
+  @Test
+  void e2eTest() throws IOException, InterruptedException {
+    HttpResponse<String> response = HttpClient.newHttpClient()
+        .send(
+            HttpRequest.newBuilder()
+                .POST(
+                    HttpRequest.BodyPublishers.ofString(
+                        """
+                        { "name": "First Article", "tags": ["tag1", "tag2"] }
+                        """
+                    )
+                )
+                .uri(URI.create("http://localhost:%d/api/articles".formatted(port)))
+                .build(),
+            HttpResponse.BodyHandlers.ofString(UTF_8)
+        );
+    assertEquals(CREATED_STATUS_CODE, response.statusCode());
+    ArticleCreateResponse articleCreateResponse =
+        objectMapper.readValue(response.body(), ArticleCreateResponse.class);
+    assertEquals(ARTICLE_ID, articleCreateResponse.articleId());
+
+    response = HttpClient.newHttpClient()
+        .send(
+            HttpRequest.newBuilder()
+                .POST(
+                    HttpRequest.BodyPublishers.ofString(
+                        """
+                        { "articleId": %d, "text": "This is a comment" }
+                        """.formatted(ARTICLE_ID))
+                )
+                .uri(URI.create("http://localhost:%d/api/comments".formatted(port)))
+                .build(),
+            HttpResponse.BodyHandlers.ofString(UTF_8)
+        );
+    assertEquals(CREATED_STATUS_CODE, response.statusCode());
+    CommentCreateResponse commentCreateResponse =
+        objectMapper.readValue(response.body(), CommentCreateResponse.class);
+    assertEquals(COMMENT_ID, commentCreateResponse.id());
+
+    response = HttpClient.newHttpClient()
+        .send(
+            HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create("http://localhost:%d/api/articles/%d".formatted(port, ARTICLE_ID)))
+                .build(),
+            HttpResponse.BodyHandlers.ofString(UTF_8)
+        );
+    ArticleGetResponse articleGetResponse =
+        objectMapper.readValue(response.body(), ArticleGetResponse.class);
+    assertEquals(CREATED_STATUS_CODE, response.statusCode());
+    assertEquals(ARTICLE_ID, articleGetResponse.articleId());
+    assertEquals("First Article", articleGetResponse.name());
+    assertEquals("tag1", articleGetResponse.tags().toArray()[0]);
+
+    response = HttpClient.newHttpClient()
+        .send(
+            HttpRequest.newBuilder()
+                .PUT(
+                    HttpRequest.BodyPublishers.ofString(
+                        """
+                        { "name": "Updated Article", "tags": ["tag3"] }
+                        """
+                    )
+                )
+                .uri(URI.create("http://localhost:%d/api/articles/%d".formatted(port, ARTICLE_ID)))
+                .build(),
+            HttpResponse.BodyHandlers.ofString(UTF_8)
+        );
+    assertEquals(CREATED_STATUS_CODE, response.statusCode());
+    ArticleUpdateResponse articleUpdateResponse =
+        objectMapper.readValue(response.body(), ArticleUpdateResponse.class);
+    assertEquals(ARTICLE_ID, articleUpdateResponse.articleId());
+
+    response = HttpClient.newHttpClient()
+        .send(
+            HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create("http://localhost:%d/api/articles/%d".formatted(port, ARTICLE_ID)))
+                .build(),
+            HttpResponse.BodyHandlers.ofString(UTF_8)
+        );
+    articleGetResponse =
+        objectMapper.readValue(response.body(), ArticleGetResponse.class);
+    assertEquals(CREATED_STATUS_CODE, response.statusCode());
+    assertEquals("Updated Article", articleGetResponse.name());
+    assertEquals("tag3", articleGetResponse.tags().toArray()[0]);
+
+    response = HttpClient.newHttpClient()
+        .send(
+            HttpRequest.newBuilder()
+                .DELETE()
+                .uri(URI.create("http://localhost:%d/api/comments/%d".formatted(port, COMMENT_ID)))
+                .build(),
+            HttpResponse.BodyHandlers.ofString(UTF_8)
+        );
+    CommentDeleteResponse commentDeleteResponse =
+        objectMapper.readValue(response.body(), CommentDeleteResponse.class);
+    assertEquals(COMMENT_ID, commentDeleteResponse.id());
+
+    response = HttpClient.newHttpClient()
+        .send(
+            HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create("http://localhost:%d/api/articles/%d".formatted(port, ARTICLE_ID)))
+                .build(),
+            HttpResponse.BodyHandlers.ofString(UTF_8)
+        );
+    articleGetResponse =
+        objectMapper.readValue(response.body(), ArticleGetResponse.class);
+    assertEquals(CREATED_STATUS_CODE, response.statusCode());
+    assertEquals(ARTICLE_ID, articleGetResponse.articleId());
+    assertEquals("Updated Article", articleGetResponse.name());
+    assertEquals("tag3", articleGetResponse.tags().toArray()[0]);
+
+    response = HttpClient.newHttpClient()
+        .send(
+            HttpRequest.newBuilder()
+                .DELETE()
+                .uri(URI.create("http://localhost:%d/api/articles/%d".formatted(port, ARTICLE_ID)))
+                .build(),
+            HttpResponse.BodyHandlers.ofString(UTF_8)
+        );
+    ArticleDeleteResponse articleDeleteResponse =
+        objectMapper.readValue(response.body(), ArticleDeleteResponse.class);
+    assertEquals(ARTICLE_ID, articleDeleteResponse.articleId());
+  }
+}

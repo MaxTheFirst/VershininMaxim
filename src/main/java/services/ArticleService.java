@@ -61,8 +61,10 @@ public class ArticleService {
       throw new ArticleDeleteException("Cannot delete book with id=" + articleId);
     }
 
-    for (Comment comment : article.getComments()) {
-      commentRepository.delete(comment.getId());
+    if (article.getComments() != null) {
+      for (Comment comment : article.getComments()) {
+        commentRepository.delete(comment.getId());
+      }
     }
     articleRepository.delete(articleId);
   }
