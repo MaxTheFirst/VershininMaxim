@@ -7,7 +7,6 @@ import types.article.Article;
 import types.article.ArticleId;
 import types.comment.Comment;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 

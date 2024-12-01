@@ -1,4 +1,4 @@
-package controllers.comment;
+package controllers.article;
 
 import controllers.Controller;
 import org.slf4j.Logger;
