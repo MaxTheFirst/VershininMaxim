@@ -10,6 +10,7 @@ public class Article {
   private final String name;
   private final Set<String> tags;
   private List<Comment> comments;
+  private boolean trending;
 
   public Article(ArticleId id, String name, Set<String> tags) {
     this.id = id;
@@ -29,6 +30,10 @@ public class Article {
     return tags;
   }
 
+  public void setComments(List<Comment> comments) {
+    this.comments = comments;
+  }
+
   public List<Comment> getComments() {
     return comments;
   }
@@ -37,14 +42,14 @@ public class Article {
     comments.add(comment);
   }
 
-  public Article newArticle(String name) {
+  public Article withName(String name) {
     if (name == null) {
       return this;
     }
     return new Article(id, name, tags);
   }
 
-  public Article newArticle(Set<String> tags) {
+  public Article withTags(Set<String> tags) {
     if (name == null) {
       return this;
     }
@@ -53,5 +58,14 @@ public class Article {
 
   public String getCommentsString() {
     return comments.toString();
+  }
+
+  public boolean isTrending() {
+    return trending;
+  }
+
+  public Article setTrending(boolean trending) {
+    this.trending = trending;
+    return this;
   }
 }

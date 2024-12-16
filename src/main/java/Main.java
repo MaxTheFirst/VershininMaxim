@@ -1,8 +1,11 @@
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import controllers.article.ArticleController;
 import controllers.article.ArticleFreemarkerController;
 import controllers.comment.CommentController;
+import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import repositories.article.ArticleRepository;
@@ -22,8 +25,9 @@ public class Main {
   public static void main(String[] args) {
     Service service = Service.ignite();
     ObjectMapper objectMapper = new ObjectMapper();
-    ArticleRepository articles = new InMemoryArticleRepository();
-    CommentRepository comments = new InMemoryCommentRepository();
+    Jdbi myDB = getJdbi();
+    ArticleRepository articles = new InMemoryArticleRepository(myDB);
+    CommentRepository comments = new InMemoryCommentRepository(myDB);
     FreeMarkerEngine freeMarkerEngine = TemplateFactory.freeMarkerEngine();
 
     Application application =
@@ -31,7 +35,7 @@ public class Main {
             List.of(
                 new ArticleController(
                     service,
-                    new ArticleService(articles, comments),
+                    new ArticleService(articles),
                     objectMapper
                 ),
                 new CommentController(
@@ -41,11 +45,19 @@ public class Main {
                 ),
                 new ArticleFreemarkerController(
                     service,
-                    new ArticleService(articles, comments),
+                    new ArticleService(articles),
                     freeMarkerEngine
                 )
             )
         );
     application.start();
+  }
+
+  private static Jdbi getJdbi() {
+    Config config = ConfigFactory.load();
+
+    return Jdbi.create(config.getString("app.database.url"),
+        config.getString("app.database.user"),
+        config.getString("app.database.password"));
   }
 }

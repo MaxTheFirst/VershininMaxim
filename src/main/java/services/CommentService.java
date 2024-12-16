@@ -7,6 +7,8 @@ import types.article.ArticleId;
 import types.comment.Comment;
 import types.comment.CommentId;
 
+import java.util.Optional;
+
 public class CommentService {
   private final ArticleRepository articleRepository;
   private final CommentRepository commentRepository;
@@ -17,11 +19,11 @@ public class CommentService {
   }
 
   public Comment findCommentById(long id) {
-    try {
-      return commentRepository.findById(id);
-    } catch (CommentNotFoundException e) {
+    Optional<Comment> comment = commentRepository.findById(id);
+    if (comment.isEmpty()) {
       throw new CommentNotFoundException("Cannot find comment with id=" + id);
     }
+    return comment.get();
   }
 
   public long createComment(long articleId, String text) {
@@ -36,14 +38,12 @@ public class CommentService {
     }
   }
 
-  public void commentUpdate(long commentId, String text) {
-    Comment comment;
-    try {
-      comment = commentRepository.findById(commentId);
-    } catch (CommentNotFoundException e) {
-      throw new CommentUpdateException("Cannot find comment with id=" + commentId);
+  public void commentUpdate(long id, String text) {
+    Optional<Comment> comment = commentRepository.findById(id);
+    if (comment.isEmpty()) {
+      throw new CommentUpdateException("Cannot find comment with id=" + id);
     }
-    commentRepository.update(comment.newComment(text));
+    commentRepository.update(comment.get().newComment(text));
   }
 
   public void deleteComment(long commentId) {

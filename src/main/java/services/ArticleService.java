@@ -1,6 +1,8 @@
 package services;
 
-import exceptions.*;
+import exceptions.ArticleDeleteException;
+import exceptions.ArticleNotFoundException;
+import exceptions.ArticleUpdateException;
 import repositories.article.ArticleRepository;
 import repositories.comment.CommentRepository;
 import types.article.Article;
@@ -8,15 +10,14 @@ import types.article.ArticleId;
 import types.comment.Comment;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public class ArticleService {
   private final ArticleRepository articleRepository;
-  private final CommentRepository commentRepository;
 
-  public ArticleService(ArticleRepository articleRepository, CommentRepository commentRepository) {
+  public ArticleService(ArticleRepository articleRepository) {
     this.articleRepository = articleRepository;
-    this.commentRepository = commentRepository;
   }
 
   public List<Article> findAll() {
@@ -24,48 +25,34 @@ public class ArticleService {
   }
 
   public Article findArticleById(long id) {
-    try {
-      return articleRepository.findById(id);
-    } catch (ArticleNotFoundException e) {
+    Optional<Article> article = articleRepository.findById(id);
+    if (article.isEmpty()) {
       throw new ArticleNotFoundException("Cannot find article with id=" + id);
     }
+    return article.get();
   }
 
   public long createArticle(String name, Set<String> tags) {
-    long articleId = articleRepository.generateId();
-    Article article = new Article(new ArticleId(articleId), name, tags);
-    try {
-      articleRepository.create(article);
-      return article.getId();
-    } catch (ArticleIdDuplicatedException e) {
-      throw new ArticleCreateException("Cannot create article");
-    }
+    Article article = new Article(new ArticleId(articleRepository.generateId()), name, tags);
+    articleRepository.create(article);
+    return article.getId();
   }
 
   public void articleUpdate(long articleId, String name, Set<String> tags) {
-    Article article;
-    try {
-      article = articleRepository.findById(articleId);
-    } catch (ArticleNotFoundException e) {
+    Optional<Article> article = articleRepository.findById(articleId);
+    if (article.isEmpty()) {
       throw new ArticleUpdateException("Cannot find article with id=" + articleId);
     }
-    article = article.newArticle(name).newArticle(tags);
-    articleRepository.update(article);
+    Article newArticle = article.get().withName(name).withTags(tags);
+    articleRepository.update(newArticle);
   }
 
   public void deleteArticle(long articleId) {
-    Article article;
-    try {
-      article = articleRepository.findById(articleId);
-    } catch (ArticleNotFoundException e) {
+    Optional<Article> article = articleRepository.findById(articleId);
+    if (article.isEmpty()) {
       throw new ArticleDeleteException("Cannot delete book with id=" + articleId);
     }
 
-    if (article.getComments() != null) {
-      for (Comment comment : article.getComments()) {
-        commentRepository.delete(comment.getId());
-      }
-    }
     articleRepository.delete(articleId);
   }
 
