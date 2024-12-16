@@ -7,6 +7,7 @@ import types.article.ArticleId;
 import types.comment.Comment;
 import types.comment.CommentId;
 
+import java.sql.SQLException;
 import java.util.Optional;
 
 public class CommentService {

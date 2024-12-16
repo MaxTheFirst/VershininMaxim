@@ -70,7 +70,7 @@ public class InMemoryCommentRepository implements CommentRepository {
       int rowsAffected = handle.createUpdate(
               "INSERT INTO comments (comment_id, article_id, content) VALUES (:id, :articleId, :content)")
           .bind("id", comment.getId())
-          .bind("articleId", comment.getArticleId())
+          .bind("articleId", comment.getArticleId().getValue())
           .bind("content", comment.getText())
           .execute();
 
@@ -88,7 +88,7 @@ public class InMemoryCommentRepository implements CommentRepository {
       int rowsAffected = handle.createUpdate(
               "UPDATE comments SET article_id = :articleId, content = :content WHERE comment_id = :id")
           .bind("id", comment.getId())
-          .bind("articleId", comment.getArticleId())
+          .bind("articleId", comment.getArticleId().getValue())
           .bind("content", comment.getText())
           .execute();
 
@@ -103,13 +103,13 @@ public class InMemoryCommentRepository implements CommentRepository {
   @Override
   public void delete(long commentId) {
     jdbi.useTransaction(handle -> {
-      Long articleId = handle.createQuery("SELECT article_id FROM comment WHERE comment_id = :id")
+      Long articleId = handle.createQuery("SELECT article_id FROM comments WHERE comment_id = :id")
           .bind("id", commentId)
           .mapTo(Long.class)
           .findFirst()
           .orElseThrow(() -> new CommentNotFoundException("Cannot find comment by id=" + commentId));
 
-      int rowsAffected = handle.createUpdate("DELETE FROM comment WHERE comment_id = :id")
+      int rowsAffected = handle.createUpdate("DELETE FROM comments WHERE comment_id = :id")
           .bind("id", commentId)
           .execute();
 

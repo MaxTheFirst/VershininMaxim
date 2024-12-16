@@ -7,7 +7,7 @@ import java.util.Objects;
 public class ArticleId {
   private final long value;
 
-  public ArticleId(long value) {
+  public ArticleId(Long value) {
     if (value < 0) {
       throw new IllegalIdException("The ID must be >=0");
     }

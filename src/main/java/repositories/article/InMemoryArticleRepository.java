@@ -5,11 +5,14 @@ import exceptions.ArticleDeleteException;
 import exceptions.ArticleNotFoundException;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
+import org.postgresql.jdbc.PgArray;
 import types.article.Article;
 import types.article.ArticleId;
 import types.comment.Comment;
 import types.comment.CommentId;
 
+import javax.swing.text.html.Option;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -29,7 +32,7 @@ public class InMemoryArticleRepository implements ArticleRepository {
               .list();
 
       Map<ArticleId, List<Comment>> commentsByArticleId = handle.createQuery(
-              "SELECT * FROM comment")
+              "SELECT * FROM comments")
           .mapToMap()
           .list()
           .stream()
@@ -42,11 +45,16 @@ public class InMemoryArticleRepository implements ArticleRepository {
 
       return articlesResult.stream()
           .map(row -> {
-            Article article = new Article(
-                new ArticleId((Long) row.get("article_id")),
-                (String) row.get("name"),
-                parseTags((Object[]) row.get("tags"))
-            ).setTrending((Boolean) row.get("trending"));
+            Article article = null;
+            try {
+              article = new Article(
+                  new ArticleId((Long) row.get("article_id")),
+                  (String) row.get("name"),
+                  parseTags((PgArray) row.get("tags"))
+              ).setTrending((Boolean) row.get("trending"));
+            } catch (SQLException e) {
+              return null;
+            }
 
             article.setComments(commentsByArticleId.getOrDefault(
                 article.getId(),
@@ -61,40 +69,43 @@ public class InMemoryArticleRepository implements ArticleRepository {
 
   @Override
   public Optional<Article> findById(long articleId) {
-    return jdbi.inTransaction(handle -> {
-      try {
-        Map<String, Object> row =
-            handle.createQuery("SELECT * FROM articles WHERE article_id = :id")
-                .bind("id", articleId)
-                .mapToMap()
-                .first();
+    try {
+      return jdbi.inTransaction(handle -> {
+        try {
+          Map<String, Object> row =
+              handle.createQuery("SELECT * FROM articles WHERE article_id = :id")
+                  .bind("id", articleId)
+                  .mapToMap()
+                  .first();
 
-        Article article = new Article(
-            new ArticleId((Long) row.get("article_id")),
-            (String) row.get("name"),
-            parseTags((Object[]) row.get("tags"))
-        ).setTrending((Boolean) row.get("trending"));
+          Article article = new Article(
+              new ArticleId((Long) row.get("article_id")),
+              (String) row.get("name"),
+              parseTags((PgArray) row.get("tags"))
+          ).setTrending((Boolean) row.get("trending"));
 
-        List<Comment> comments = handle.createQuery(
-                "SELECT * FROM comment WHERE article_id = :id")
-            .bind("id", articleId)
-            .mapToMap()
-            .list()
-            .stream()
-            .map(commentRow -> new Comment(
-                new CommentId((Long) row.get("comment_id")),
-                new ArticleId((Long) row.get("article_id")),
-                (String) commentRow.get("content")
-            ))
-            .collect(Collectors.toList());
+          List<Comment> comments = handle.createQuery(
+                  "SELECT * FROM comments WHERE article_id = :id")
+              .bind("id", articleId)
+              .mapToMap()
+              .list()
+              .stream()
+              .map(commentRow -> new Comment(
+                  new CommentId((Long) commentRow.get("comment_id")),
+                  new ArticleId((Long) commentRow.get("article_id")),
+                  (String) commentRow.get("content")
+              ))
+              .collect(Collectors.toList());
 
-        article.setComments(comments);
-
-        return Optional.of(article);
-      } catch (IllegalStateException e) {
-        return Optional.empty();
-      }
-    });
+          article.setComments(comments);
+          return Optional.of(article);
+        } catch (IllegalStateException e) {
+          return Optional.empty();
+        }
+      });
+    } catch (SQLException e) {
+      return Optional.empty();
+    }
   }
 
   @Override
@@ -109,21 +120,20 @@ public class InMemoryArticleRepository implements ArticleRepository {
   @Override
   public void create(Article article) {
     jdbi.inTransaction(handle -> {
-      int rowsAffected =  handle.createUpdate(
-              "INSERT INTO articles (article_id, header, tags, trending) VALUES (:id, :header, :tags, :trending)")
+      int rowsAffected = handle.createUpdate(
+              "INSERT INTO articles (article_id, name, tags, trending) VALUES (:id, :name, :tags, :trending)")
           .bind("id", article.getId())
-          .bind("header", article.getName())
-          .bind("tags", article.getTags().toArray(new String[0]))
+          .bind("name", article.getName())
+          .bind("tags", getTags(article.getTags())) // Привязка массива
           .bind("trending", article.isTrending())
           .execute();
 
       if (rowsAffected == 0) {
-        throw new ArticleCreateException("Fail create");
+        throw new ArticleCreateException("Failed to create article");
       }
       return null;
     });
   }
-
 
   @Override
   public void update(Article article) {
@@ -132,7 +142,7 @@ public class InMemoryArticleRepository implements ArticleRepository {
               "UPDATE articles SET name = :name, tags = :tags, trending = :trending WHERE article_id = :id")
           .bind("id", article.getId())
           .bind("name", article.getName())
-          .bind("tags", article.getTags().toArray(new String[0]))
+          .bind("tags", getTags(article.getTags()))
           .bind("trending", article.isTrending())
           .execute();
 
@@ -159,12 +169,23 @@ public class InMemoryArticleRepository implements ArticleRepository {
     });
   }
 
-  private Set<String> parseTags(Object[] tagsArray) {
-    if (tagsArray == null || tagsArray.length == 0) {
+  private String[] getTags(Set<String> tags) {
+    return tags.toArray(new String[0]);
+  }
+
+  public static Set<String> parseTags(PgArray pgArray) throws SQLException {
+    if (pgArray == null) {
       return new HashSet<>();
     }
-    return Arrays.stream(tagsArray)
+
+    Object[] array = (Object[]) pgArray.getArray();
+    if (array == null || array.length == 0) {
+      return new HashSet<>();
+    }
+
+    return Arrays.stream(array)
         .map(Object::toString)
-        .collect(Collectors.toSet());
+        .collect(HashSet::new, HashSet::add, HashSet::addAll);
   }
+
 }

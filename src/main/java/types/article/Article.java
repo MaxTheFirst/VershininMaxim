@@ -2,6 +2,8 @@ package types.article;
 
 import types.comment.Comment;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -39,6 +41,9 @@ public class Article {
   }
 
   public void addComment(Comment comment) {
+    if (comments == null) {
+      comments = new ArrayList<>();
+    }
     comments.add(comment);
   }
 

@@ -2,6 +2,7 @@ package repositories.article;
 
 import types.article.Article;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 

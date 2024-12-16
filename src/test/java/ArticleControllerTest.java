@@ -52,7 +52,15 @@ class ArticleControllerTest {
 
   @BeforeAll
   static void beforeAll() {
-    initDB();
+    String postgresJdbcUrl = POSTGRES.getJdbcUrl();
+    Flyway flyway =
+        Flyway.configure()
+            .outOfOrder(true)
+            .locations("classpath:db/migrations")
+            .dataSource(postgresJdbcUrl, POSTGRES.getUsername(), POSTGRES.getPassword())
+            .load();
+    flyway.migrate();
+    jdbi = Jdbi.create(postgresJdbcUrl, POSTGRES.getUsername(), POSTGRES.getPassword());
   }
 
   @BeforeEach
@@ -83,22 +91,10 @@ class ArticleControllerTest {
     service.awaitInitialization();
   }
 
-  private static void initDB() {
-    String postgresJdbcUrl = POSTGRES.getJdbcUrl();
-    Flyway flyway =
-        Flyway.configure()
-            .outOfOrder(true)
-            .locations("classpath:db/migrations")
-            .dataSource(postgresJdbcUrl, POSTGRES.getUsername(), POSTGRES.getPassword())
-            .load();
-    flyway.migrate();
-    jdbi = Jdbi.create(postgresJdbcUrl, POSTGRES.getUsername(), POSTGRES.getPassword());
-  }
-
   void deleteAll() {
     jdbi.inTransaction((Handle ownHandle) -> {
-      ownHandle.createUpdate("DELETE FROM article").execute();
-      ownHandle.createUpdate("DELETE FROM comment").execute();
+      ownHandle.createUpdate("DELETE FROM articles").execute();
+      ownHandle.createUpdate("DELETE FROM comments").execute();
       return null;
     });
   }

@@ -7,7 +7,7 @@ import java.util.Objects;
 public class CommentId {
   private final long value;
 
-  public CommentId(long value) {
+  public CommentId(Long value) {
     if (value < 0) {
       throw new IllegalIdException("The ID must be >=0");
     }

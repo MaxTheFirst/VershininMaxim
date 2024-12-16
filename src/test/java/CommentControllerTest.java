@@ -3,12 +3,15 @@ import controllers.article.ArticleController;
 import controllers.comment.CommentController;
 import controllers.comment.responses.*;
 import org.flywaydb.core.Flyway;
+import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import repositories.article.ArticleRepository;
 import repositories.article.InMemoryArticleRepository;
 import repositories.comment.CommentRepository;
@@ -25,6 +28,7 @@ import java.util.List;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Testcontainers
 class CommentControllerTest {
   private static final int CREATED_STATUS_CODE = 201;
   private static final long FIRST_COMMENT_ID = 1;
@@ -43,13 +47,34 @@ class CommentControllerTest {
 
   private static Jdbi jdbi;
 
+  @BeforeAll
+  static void beforeAll() {
+    String postgresJdbcUrl = POSTGRES.getJdbcUrl();
+    Flyway flyway =
+        Flyway.configure()
+            .outOfOrder(true)
+            .locations("classpath:db/migrations")
+            .dataSource(postgresJdbcUrl, POSTGRES.getUsername(), POSTGRES.getPassword())
+            .load();
+    flyway.migrate();
+    jdbi = Jdbi.create(postgresJdbcUrl, POSTGRES.getUsername(), POSTGRES.getPassword());
+  }
+
   @BeforeEach
   void beforeEach() throws IOException, InterruptedException {
+    deleteAll();
     service = Service.ignite();
     initApp();
     port = service.port();
-    initDB();
     createArticle();
+  }
+
+  void deleteAll() {
+    jdbi.inTransaction((Handle ownHandle) -> {
+      ownHandle.createUpdate("DELETE FROM comments").execute();
+      ownHandle.createUpdate("DELETE FROM articles").execute();
+      return null;
+    });
   }
 
   private void initApp() {
@@ -68,18 +93,6 @@ class CommentControllerTest {
 
     application.start();
     service.awaitInitialization();
-  }
-
-  private void initDB() {
-    String postgresJdbcUrl = POSTGRES.getJdbcUrl();
-    Flyway flyway =
-        Flyway.configure()
-            .outOfOrder(true)
-            .locations("classpath:db/migrations")
-            .dataSource(postgresJdbcUrl, POSTGRES.getUsername(), POSTGRES.getPassword())
-            .load();
-    flyway.migrate();
-    jdbi = Jdbi.create(postgresJdbcUrl, POSTGRES.getUsername(), POSTGRES.getPassword());
   }
 
   @AfterEach
