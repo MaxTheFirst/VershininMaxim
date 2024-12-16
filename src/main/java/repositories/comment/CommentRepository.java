@@ -1,0 +1,20 @@
+package repositories.comment;
+
+import types.comment.Comment;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface CommentRepository {
+  long generateId();
+
+  List<Comment> findAll();
+
+  Optional<Comment> findById(long commentId);
+
+  void create(Comment comment);
+
+  void update(Comment comment);
+
+  void delete(long commentId);
+}
